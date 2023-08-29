@@ -12,3 +12,5 @@ _deps
 pyenv.cfg
 venv
 __pycache__
+bazel-*
+**/*.bazel.lock
