@@ -3,11 +3,11 @@ Simulation of SpotMicroAI and it's Kinematics
 
 """
 import time
-import spotmicroai
+import simulation.spotmicroai as spotmicro
 import os
 
-urdfPath = os.path.dirname(__file__) + "/robot-model/spot.urdf.xml"
-robot=spotmicroai.Robot(urdf=urdfPath)
+urdfPath = "robot-model/spot.xml"
+robot=spotmicro.Robot(urdf=urdfPath)
 
 for i in range (10000):
     robot.step()
