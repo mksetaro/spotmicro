@@ -1,23 +1,27 @@
 load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 load("@simulation_pip//:requirements.bzl", "requirement")
+
 py_binary(
     name = "example",
-    deps = [":spotmicro"],
-    srcs = ["example.py",],
+    srcs = ["example.py"],
     data = [":model"],
+    deps = [":spotmicro"],
 )
 
 filegroup(
     name = "model",
     srcs = ["robot_model/spot.xml"] + glob(["robot_model/stl/*"]),
 )
+
 py_library(
     name = "spotmicro",
-    deps = [
-            requirement("pybullet"),
-            requirement("numpy"), 
-            requirement("matplotlib")],
     srcs = [
-            "spotmicroai.py",
-            "kinematics.py"],
+        "kinematics.py",
+        "spotmicroai.py",
+    ],
+    deps = [
+        requirement("pybullet"),
+        requirement("numpy"),
+        requirement("matplotlib"),
+    ],
 )
