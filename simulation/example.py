@@ -6,7 +6,8 @@ import time
 import simulation.spotmicroai as spotmicro
 import os
 
-urdfPath = "robot-model/spot.xml"
+urdfPath = os.path.dirname(__file__) + "/robot_model/spot.xml"
+print(urdfPath)
 robot=spotmicro.Robot(urdf=urdfPath)
 
 for i in range (10000):

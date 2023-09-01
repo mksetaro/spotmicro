@@ -9,7 +9,7 @@ py_binary(
 
 filegroup(
     name = "model",
-    srcs = glob(["robot_model/*"]),
+    srcs = ["robot_model/spot.xml"] + glob(["robot_model/stl/*"]),
 )
 py_library(
     name = "spotmicro",
