@@ -2,15 +2,10 @@ module(
     name = "spot_marley",
 )
 
-#### bazel tools ####
+######################
+#### rules python ####
+######################
 
-bazel_dep(
-    name = "buildifier_prebuilt",
-    version = "6.3.3",
-    dev_dependency = True,
-)
-
-#### rules_python ####
 bazel_dep(name = "rules_python", version = "0.25.0")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
@@ -18,13 +13,32 @@ python.toolchain(
     is_default = True,
     python_version = "3.9",
 )
+#####################
+#### bazel tools ####
+#####################
 
-pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+#### buildifier ####
+bazel_dep(
+    name = "buildifier_prebuilt",
+    version = "6.3.3",
+    dev_dependency = True,
+)
+
+#### python linter ####
+
+pip_lint = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip_lint.parse(
+    hub_name = "pip_lint",
+    python_version = "3.9",
+    requirements_lock = "//tools:requirements.txt",
+)
+use_repo(pip_lint, "pip_lint")
 
 #### simulation dependencies ####
-pip.parse(
+pip_simulation = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip_simulation.parse(
     hub_name = "simulation_pip",
     python_version = "3.9",
     requirements_lock = "//simulation:requirements.txt",
 )
-use_repo(pip, "simulation_pip")
+use_repo(pip_simulation, "simulation_pip")
