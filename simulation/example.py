@@ -8,11 +8,11 @@ import os
 
 urdfPath = os.path.dirname(__file__) + "/robot_model/spot.xml"
 print(urdfPath)
-robot=spotmicro.Robot(urdf=urdfPath)
+robot = spotmicro.Robot(urdf=urdfPath)
 
-for i in range (10000):
+for i in range(10000):
     robot.step()
-    time.sleep(1./240.)
+    time.sleep(1.0 / 240.0)
 # physicsClient = p.connect(p.GUI)
 # p.setAdditionalSearchPath(pybullet_data.getDataPath())
 # p.setGravity(0,0,-10)
