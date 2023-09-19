@@ -25,3 +25,13 @@ py_library(
         requirement("matplotlib"),
     ],
 )
+
+py_library(
+    name = "simulation",
+    srcs = [
+        "simulation.py",
+    ],
+    deps = [
+        requirement("pybullet"),
+    ],
+)

@@ -1,0 +1,111 @@
+import pybullet_data
+import pybullet
+import time
+
+import json
+from os import path
+
+CONFIGURATION_KEYS = [
+    "use_real_time",
+    "physics_engine_connection",
+    "max_physics_solver_iterations",
+]
+
+
+class SimulationParameters:
+    def __init__(self, config_path="", default=True):
+        self.valid = False
+        if default:
+            self.use_real_time = True
+            self.physics_engine_connection = pybullet.GUI
+            self.max_physics_solver_iterations = 200
+            self.valid = True
+        else:
+            self._parse_config_file(config_path)
+
+    def _parse_config_file(self, config_file_path):
+        if not path.isfile(config_file_path):
+            return
+        file = open(config_file_path, "r")
+
+        json_dict = dict()
+        try:
+            json_dict = json.load(file)
+        except ValueError:
+            return
+
+        if not self._json_dict_valid(json_dict):
+            return
+        self.use_real_time = json_dict[CONFIGURATION_KEYS[0]]
+        self.physics_engine_connection = json_dict[CONFIGURATION_KEYS[1]]
+        self.max_physics_solver_iterations = json_dict[CONFIGURATION_KEYS[2]]
+        self.valid = True
+
+    def _json_dict_valid(self, json_dict):
+        return all(key in CONFIGURATION_KEYS for key in json_dict)
+
+
+# leaving default pybullet step size
+FIXED_TIME_STEP_SECONDS = 0.0041
+
+
+class SimulationClient:
+    def __init__(self, parameters: SimulationParameters):
+        self.engine_client_id = self._connect_to_physics_server(
+            parameters.physics_engine_connection
+        )
+        self._setup_simulation_time(
+            parameters.use_real_time, parameters.physics_engine_connection
+        )
+        # pybullet configuration
+        self._setup_simulation_client()
+        # physics engine configuration
+        self._setup_physics_engine(
+            parameters.max_physics_solver_iterations, FIXED_TIME_STEP_SECONDS
+        )
+
+    def _connect_to_physics_server(self, physics_engine_connection_type):
+        self.engine_client_id = pybullet.connect(physics_engine_connection_type)
+        if self.engine_client_id < 0:
+            self.engine_client_id = pybullet.connect(pybullet.GUI)
+
+    def _setup_simulation_time(self, use_real_time, physics_engine_connection_type):
+        self.use_real_time = use_real_time
+        self.reference_time = time.time()
+        self.current_time = 0
+        if physics_engine_connection_type == pybullet.DIRECT:
+            self.use_real_time = False
+        pybullet.setRealTimeSimulation(self.use_real_time)
+
+    def _setup_simulation_client():
+        pybullet.setAdditionalSearchPath(pybullet_data.getDataPath())
+        pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_TINY_RENDERER, 1)
+
+    def _setup_physics_engine(max_solver_iterations, cycle_step_seconds):
+        pybullet.setPhysicsEngineParameter(
+            numSolverIterations=max_solver_iterations, fixedTimeStep=cycle_step_seconds
+        )
+
+    def _update_internal_timestamp(self):
+        if self.use_real_time:
+            self.current_time = time.time() - self.reference_time
+        else:
+            self.current_time += FIXED_TIME_STEP_SECONDS
+
+    def set_simulated_agent(agent):
+        pass
+
+    def set_simulation_scenario(scenario):
+        pass
+
+    def start():
+        pass
+
+    def step(self):
+        self._update_internal_timestamp()
+        # do stuff
+        if not self.use_real_time:
+            pybullet.stepSimulation()
+
+    def shutdown():
+        pybullet.disconnect()
