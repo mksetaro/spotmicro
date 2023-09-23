@@ -42,3 +42,12 @@ pip_simulation.parse(
     requirements_lock = "//simulation:requirements.txt",
 )
 use_repo(pip_simulation, "simulation_pip")
+
+#### teleop dependencies ####
+pip_teleop = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip_teleop.parse(
+    hub_name = "teleop_pip",
+    python_version = "3.9",
+    requirements_lock = "//teleop:requirements.txt",
+)
+use_repo(pip_teleop, "teleop_pip")
