@@ -1,24 +1,51 @@
+import asyncio
 import evdev
 import logging
-import asyncio
-
 from evdev import ecodes
 
-# read specific events
-# notify event
-EV_PATH_KEY = "event_path"
 
-_TEST_CONFIG = {EV_PATH_KEY: "/dev/input/event3"}
+class EventHandler(object):
+    def __init__(self, decoder_function, name) -> None:
+        self.name = name
+        self.decoder_function = decoder_function
+
+    def __call__(self, *args, **kwargs):
+        logging.info("Name: {name} ".format(name=self.name))
+        payload = self.decoder_function(*args, **kwargs)
+        if payload is None:
+            logging.error(
+                "Empty payload, decorated decoders must return a json dictionary"
+            )
+            return
+        # notify function to external
+        logging.info("Payload: {payload} ".format(payload=payload))
+
+
+def EventHandlerDecorator(name):
+    def _create_decorator(function):
+        return EventHandler(function, name)
+
+    return _create_decorator
+
+
+@EventHandlerDecorator(name="MouseLeftButtonHandler")
+def handle_mouse_left_button(value):
+    return {"value": value}
+
+
+INPUT_HANDLERS_MAPPING = {
+    hash((ecodes.EV_KEY, ecodes.BTN_LEFT)): handle_mouse_left_button
+}
 
 
 class InputDeviceController:
     def __init__(self, input_config) -> None:
-        self.event_path = input_config[EV_PATH_KEY]
-        self.events_whitelist = [ecodes.REL_Y, ecodes.REL_X, ecodes.BTN_LEFT]
+        self.event_path = input_config["event_path"]
+        self.event_handlers = INPUT_HANDLERS_MAPPING
         self.device = None
         self.event_loop = None
 
-    def info(self):
+    def info(self) -> None:
         if self.is_open():
             logging.info(
                 "{path} | {name} | {phys}".format(
@@ -48,16 +75,18 @@ class InputDeviceController:
             logging.error("Cannot start listener for event {}".format(self.event_path))
             return False
 
-    def close(self):
+    def close(self) -> None:
         pass
 
-    def is_running(self):
+    def is_running(self) -> bool:
         return self.event_loop is not None and self.event_loop.is_running()
 
-    async def _listen_events(self):
+    async def _listen_events(self) -> None:
         async for ev in self.device.async_read_loop():
-            if ev.type != ecodes.EV_SYN and ev.code in self.events_whitelist:
-                logging.warning("{}".format(evdev.util.categorize(ev)))
+            handler_key = hash((ev.type, ev.code))
+            if handler_key in self.event_handlers:
+                self.event_handlers[handler_key](ev.value)
+                logging.debug("{}".format(evdev.util.categorize(ev)))
 
     def run(self) -> bool:
         if not self.is_open():
@@ -73,30 +102,8 @@ class InputDeviceController:
         self.event_loop = asyncio.get_event_loop()
         asyncio.ensure_future(self._listen_events())
         self.event_loop.run_forever()  # to be improved
+        return True
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         self.event_loop.stop()
         self.close()
-        pass
-
-
-logging.basicConfig(
-    format="%(asctime)s |%(levelname)s| %(message)s", level=logging.DEBUG
-)
-
-
-def main():
-    try:
-        mouse = InputDeviceController(_TEST_CONFIG)
-        mouse.info()
-        mouse.open()
-        mouse.run()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        logging.info("Shutting down InputController")
-        mouse.shutdown()
-
-
-if __name__ == "__main__":
-    main()
