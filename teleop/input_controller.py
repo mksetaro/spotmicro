@@ -2,23 +2,43 @@ import asyncio
 import evdev
 import logging
 from evdev import ecodes
+import time
 
 
 class EventHandler(object):
     def __init__(self, decoder_function, name) -> None:
         self.name = name
         self.decoder_function = decoder_function
+        self.cache = dict()
+        self.payload = {"name": self.name, "timestamp": 0, "value": None}
 
     def __call__(self, *args, **kwargs):
         logging.info("Name: {name} ".format(name=self.name))
-        payload = self.decoder_function(*args, **kwargs)
-        if payload is None:
+        kwargs.update({"cache": self.cache, "payload": self.payload})
+        done = self.decoder_function(*args, **kwargs)
+
+        # notify function to external
+        if done:
+            self._fire_event()
+
+        return done
+
+    def _fire_event(self):
+        if not all(key in self.payload for key in ["name", "timestamp", "value"]):
             logging.error(
-                "Empty payload, decorated decoders must return a json dictionary"
+                "Payload non valid, it must contain keys: {}".format(
+                    ["name", "timestamp", "value"]
+                )
             )
             return
-        # notify function to external
-        logging.info("Payload: {payload} ".format(payload=payload))
+        self.payload["timestamp"] = time.time()
+        logging.info("Payload: {payload} fired".format(payload=self.payload))
+        self._reset()
+
+    def _reset(self):
+        self.payload["timestamp"] = 0
+        self.payload["value"] = None
+        self.cache.clear()
 
 
 def EventHandlerDecorator(name):
@@ -29,12 +49,40 @@ def EventHandlerDecorator(name):
 
 
 @EventHandlerDecorator(name="MouseLeftButtonHandler")
-def handle_mouse_left_button(value):
-    return {"value": value}
+def handle_mouse_left_button(input_event, cache, payload, *args, **kwargs):
+    print(cache)
+    print(input_event.type)
+    print(input_event.code)
+    payload["value"] = input_event.value
+    return True
+
+
+@EventHandlerDecorator(name="MouseRelativePositionHandler")
+def handle_mouse_position(input_event, cache, payload, *args, **kwargs):
+    if "pos_ts" not in cache or cache["pos_ts"] > input_event.timestamp():
+        cache["pos_ts"] = input_event.timestamp()
+    elif cache["pos_ts"] < input_event.timestamp():
+        logging.warning("Package dated in the past, dropping message")
+        payload["value"] = None
+        return True
+
+    if input_event.type == ecodes.EV_REL:
+        cache[ecodes.REL[input_event.code]] = input_event.value
+
+    if input_event.type == ecodes.EV_SYN:
+        payload["value"] = {
+            key: value for key, value in cache.items() if key != "pos_ts"
+        }
+        return True
+
+    return False
 
 
 INPUT_HANDLERS_MAPPING = {
-    hash((ecodes.EV_KEY, ecodes.BTN_LEFT)): handle_mouse_left_button
+    hash((ecodes.EV_KEY, ecodes.BTN_LEFT)): handle_mouse_left_button,
+    hash((ecodes.EV_REL, ecodes.REL_X)): handle_mouse_position,
+    hash((ecodes.EV_REL, ecodes.REL_Y)): handle_mouse_position,
+    hash((ecodes.EV_SYN, ecodes.SYN_REPORT)): handle_mouse_position,
 }
 
 
@@ -85,7 +133,7 @@ class InputDeviceController:
         async for ev in self.device.async_read_loop():
             handler_key = hash((ev.type, ev.code))
             if handler_key in self.event_handlers:
-                self.event_handlers[handler_key](ev.value)
+                self.event_handlers[handler_key](ev)
                 logging.debug("{}".format(evdev.util.categorize(ev)))
 
     def run(self) -> bool:

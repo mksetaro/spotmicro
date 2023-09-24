@@ -2,6 +2,7 @@ import logging
 from teleop.input_controller import InputDeviceController
 
 
+# _TEST_CONFIG = {"event_path": "/dev/input/event6"}
 _TEST_CONFIG = {"event_path": "/dev/input/event3"}
 
 logging.basicConfig(
@@ -12,6 +13,7 @@ logging.basicConfig(
 def main():
     try:
         mouse = InputDeviceController(_TEST_CONFIG)
+        mouse.info()
         mouse.open()
         mouse.run()
     except KeyboardInterrupt:
