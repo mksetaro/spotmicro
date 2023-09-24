@@ -13,6 +13,8 @@ py_library(
     name = "input_controller",
     srcs = [
         "input_controller.py",
+        "event_handler.py",
+        "device_manager.py",
     ],
     deps = [
         requirement("evdev"),
