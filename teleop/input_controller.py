@@ -4,13 +4,13 @@ import logging
 
 from teleop import event_handler
 
-POLL_SLEEP_DURATION = 40e-3  
+POLL_SLEEP_DURATION = 40e-3
 
 
 class InputDeviceController:
-    def __init__(self, input_config, device_manager) -> None:
+    def __init__(self, input_config, fire_event_func) -> None:
         self.event_path = input_config["event_path"]
-        self.device_manager = device_manager
+        self.fire_event_func = fire_event_func
         self.event_handlers = dict()
         self.device = None
         self.event_loop = None
@@ -94,7 +94,7 @@ class InputDeviceController:
                 )
             )
             return
-        self.device_manager.new_event(payload)
+        self.fire_event_func(payload)
 
     def is_running(self) -> bool:
         return (

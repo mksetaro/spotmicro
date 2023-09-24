@@ -6,7 +6,7 @@ class BaseDeviceManager(object):
     def __init__(self, name, input_config, keys_list) -> None:
         self.name = name
         self.input_controller = input_controller.InputDeviceController(
-            input_config=input_config, device_manager=self
+            input_config=input_config, fire_event_func=self.new_event
         )
         for key in keys_list:
             self.input_controller.register_handler(key)
