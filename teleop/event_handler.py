@@ -56,6 +56,10 @@ def handle_button_event(input_event, cache, payload, *args, **kwargs) -> bool:
 def handle_relative_position_event(
     input_event, cache, payload, *args, **kwargs
 ) -> bool:
+    # SYN_REPORT are emitted after a multipacket event happens, thus if it's received but the cache has no REL the event should be discarded
+    if input_event.type == evdev.ecodes.EV_SYN and len(list(cache)) == 0:
+        return True
+
     if "pos_ts" not in cache or cache["pos_ts"] > input_event.timestamp():
         cache["pos_ts"] = input_event.timestamp()
     elif cache["pos_ts"] < input_event.timestamp():
@@ -69,7 +73,6 @@ def handle_relative_position_event(
 
     if input_event.type == evdev.ecodes.EV_REL:
         cache[evdev.ecodes.REL[input_event.code]] = input_event.value
-
     if input_event.type == evdev.ecodes.EV_SYN:
         payload["value"] = {
             key: value for key, value in cache.items() if key != "pos_ts"

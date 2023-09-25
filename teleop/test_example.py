@@ -3,7 +3,6 @@ import asyncio
 from teleop import device_manager
 
 
-# _TEST_CONFIG = {"event_path": "/dev/input/event6"}
 _TEST_CONFIG = {"event_path": "/dev/input/event3"}
 
 logging.basicConfig(

@@ -110,7 +110,10 @@ class InputDeviceController:
             if handler_key in self.event_handlers:
                 status, payload = self.event_handlers[handler_key](ev)
                 logging.debug("{}".format(evdev.util.categorize(ev)))
-                if status == event_handler.HandlerStatus.Done:
+                if (
+                    status == event_handler.HandlerStatus.Done
+                    and payload["value"] is not None
+                ):
                     self._fire_event(payload)
 
     def run(self) -> bool:
