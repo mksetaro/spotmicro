@@ -77,11 +77,11 @@ class SimulationClient:
             self.use_real_time = False
         pybullet.setRealTimeSimulation(self.use_real_time)
 
-    def _setup_simulation_client():
+    def _setup_simulation_client(self):
         pybullet.setAdditionalSearchPath(pybullet_data.getDataPath())
         pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_TINY_RENDERER, 1)
 
-    def _setup_physics_engine(max_solver_iterations, cycle_step_seconds):
+    def _setup_physics_engine(self, max_solver_iterations, cycle_step_seconds):
         pybullet.setPhysicsEngineParameter(
             numSolverIterations=max_solver_iterations, fixedTimeStep=cycle_step_seconds
         )
@@ -92,10 +92,10 @@ class SimulationClient:
         else:
             self.current_time += FIXED_TIME_STEP_SECONDS
 
-    def set_simulated_agent(agent):
+    def set_simulated_agent(self, agent):
         pass
 
-    def set_simulation_scenario(scenario):
+    def set_simulation_scenario(self, scenario):
         pass
 
     def start():

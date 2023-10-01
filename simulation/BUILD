@@ -33,5 +33,13 @@ py_library(
     ],
     deps = [
         requirement("pybullet"),
+        requirement("numpy"),
     ],
+)
+
+py_binary(
+    name = "simulation_main",
+    srcs = ["simulation_main.py"],
+    data = [":model"],
+    deps = [":simulation"],
 )
