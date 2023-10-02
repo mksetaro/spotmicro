@@ -30,6 +30,7 @@ py_library(
     name = "simulation",
     srcs = [
         "simulation.py",
+        "simulation_scenario.py",
     ],
     deps = [
         requirement("pybullet"),

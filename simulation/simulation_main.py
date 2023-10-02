@@ -7,7 +7,7 @@ def main():
     try:
         sim_parameters = simulation.SimulationParameters()
         sim_client = simulation.SimulationClient(sim_parameters)
-
+        sim_client.start()
         while True:
             sim_client.step()
     except KeyboardInterrupt:

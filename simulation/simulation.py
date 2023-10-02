@@ -1,7 +1,7 @@
 import pybullet_data
 import pybullet
 import time
-
+import simulation_scenario
 import json
 from os import path
 
@@ -17,7 +17,7 @@ class SimulationParameters:
         self.valid = False
         if default:
             self.use_real_time = True
-            self.physics_engine_connection = pybullet.GUI
+            self.physics_engine_connection = pybullet.SHARED_MEMORY
             self.max_physics_solver_iterations = 200
             self.valid = True
         else:
@@ -51,18 +51,9 @@ FIXED_TIME_STEP_SECONDS = 0.0041
 
 class SimulationClient:
     def __init__(self, parameters: SimulationParameters):
-        self.engine_client_id = self._connect_to_physics_server(
-            parameters.physics_engine_connection
-        )
-        self._setup_simulation_time(
-            parameters.use_real_time, parameters.physics_engine_connection
-        )
-        # pybullet configuration
-        self._setup_simulation_client()
-        # physics engine configuration
-        self._setup_physics_engine(
-            parameters.max_physics_solver_iterations, FIXED_TIME_STEP_SECONDS
-        )
+        self.parameters = parameters
+        self.agent = None
+        self.scenario = None
 
     def _connect_to_physics_server(self, physics_engine_connection_type):
         self.engine_client_id = pybullet.connect(physics_engine_connection_type)
@@ -85,6 +76,7 @@ class SimulationClient:
         pybullet.setPhysicsEngineParameter(
             numSolverIterations=max_solver_iterations, fixedTimeStep=cycle_step_seconds
         )
+        pybullet.setGravity(0, 0, -9.81)
 
     def _update_internal_timestamp(self):
         if self.use_real_time:
@@ -92,14 +84,36 @@ class SimulationClient:
         else:
             self.current_time += FIXED_TIME_STEP_SECONDS
 
+    def _reset(self):
+        pybullet.resetSimulation()
+
     def set_simulated_agent(self, agent):
+        self._reset()
+        self.agent = agent
+        self.agent.load()
         pass
 
-    def set_simulation_scenario(self, scenario):
+    def set_simulation_scenario(
+        self, scenario: simulation_scenario.BaseSimulationScenario
+    ):
+        self._reset()
+        self.scenario = scenario
+        self.scenario.load()
         pass
 
-    def start():
-        pass
+    def start(self):
+        self.engine_client_id = self._connect_to_physics_server(
+            self.parameters.physics_engine_connection
+        )
+        self._setup_simulation_time(
+            self.parameters.use_real_time, self.parameters.physics_engine_connection
+        )
+        # pybullet configuration
+        self._setup_simulation_client()
+        # physics engine configuration
+        self._setup_physics_engine(
+            self.parameters.max_physics_solver_iterations, FIXED_TIME_STEP_SECONDS
+        )
 
     def step(self):
         self._update_internal_timestamp()
@@ -107,5 +121,5 @@ class SimulationClient:
         if not self.use_real_time:
             pybullet.stepSimulation()
 
-    def shutdown():
+    def shutdown(self):
         pybullet.disconnect()
