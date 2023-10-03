@@ -4,6 +4,7 @@ import time
 import simulation_scenario
 import json
 from os import path
+import logging
 
 CONFIGURATION_KEYS = [
     "use_real_time",
@@ -76,7 +77,7 @@ class SimulationClient:
         pybullet.setPhysicsEngineParameter(
             numSolverIterations=max_solver_iterations, fixedTimeStep=cycle_step_seconds
         )
-        pybullet.setGravity(0, 0, -9.81)
+        # pybullet.setGravity(0, 0, -9.81)
 
     def _update_internal_timestamp(self):
         if self.use_real_time:
@@ -85,7 +86,8 @@ class SimulationClient:
             self.current_time += FIXED_TIME_STEP_SECONDS
 
     def _reset(self):
-        pybullet.resetSimulation()
+        if pybullet.isConnected():
+            pybullet.resetSimulation()
 
     def set_simulated_agent(self, agent):
         self._reset()
@@ -96,10 +98,15 @@ class SimulationClient:
     def set_simulation_scenario(
         self, scenario: simulation_scenario.BaseSimulationScenario
     ):
+        if not issubclass(type(scenario), simulation_scenario.BaseSimulationScenario):
+            TypeError(
+                "Cannot load scenario, BaseSimulationScenario has to be used to create scenarios"
+            )
+        logging.info("Loading Scenario {}".format(scenario.name))
         self._reset()
         self.scenario = scenario
         self.scenario.load()
-        pass
+        logging.info("Scenario {} successfully loaded".format(scenario.name))
 
     def start(self):
         self.engine_client_id = self._connect_to_physics_server(
