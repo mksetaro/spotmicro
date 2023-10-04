@@ -1,10 +1,11 @@
-import time
 import simulation
 import os
 import simulation_scenario
-import pybullet_data
+import simulation_agent
 import pybullet
-import math
+import os
+
+URDF_PATH = os.path.dirname(__file__) + "/robot_model/spot.xml"
 
 
 class TestScenario(simulation_scenario.BaseSimulationScenario):
@@ -44,9 +45,11 @@ def main():
     try:
         sim_parameters = simulation.SimulationParameters()
         sim_client = simulation.SimulationClient(sim_parameters)
+        agent = simulation_agent.SimulationAgent("Marley", URDF_PATH)
         scenario = TestScenario()
         sim_client.start()
         sim_client.set_simulation_scenario(scenario)
+        sim_client.set_simulated_agent(agent)
         while True:
             sim_client.step()
     except KeyboardInterrupt:

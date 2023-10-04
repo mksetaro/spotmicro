@@ -2,6 +2,7 @@ import pybullet_data
 import pybullet
 import time
 import simulation_scenario
+import simulation_agent
 import json
 from os import path
 import logging
@@ -77,7 +78,7 @@ class SimulationClient:
         pybullet.setPhysicsEngineParameter(
             numSolverIterations=max_solver_iterations, fixedTimeStep=cycle_step_seconds
         )
-        # pybullet.setGravity(0, 0, -9.81)
+        pybullet.setGravity(0, 0, -9.81)
 
     def _update_internal_timestamp(self):
         if self.use_real_time:
@@ -85,12 +86,15 @@ class SimulationClient:
         else:
             self.current_time += FIXED_TIME_STEP_SECONDS
 
-    def _reset(self):
+    def reset(self):
         if pybullet.isConnected():
             pybullet.resetSimulation()
 
-    def set_simulated_agent(self, agent):
-        self._reset()
+    def set_simulated_agent(self, agent: simulation_agent.SimulationAgent):
+        if not type(agent) == simulation_agent.SimulationAgent:
+            TypeError(
+                "Cannot load agent, SimulationAgent has to be used to create agents"
+            )
         self.agent = agent
         self.agent.load()
         pass
@@ -103,7 +107,6 @@ class SimulationClient:
                 "Cannot load scenario, BaseSimulationScenario has to be used to create scenarios"
             )
         logging.info("Loading Scenario {}".format(scenario.name))
-        self._reset()
         self.scenario = scenario
         self.scenario.load()
         logging.info("Scenario {} successfully loaded".format(scenario.name))
@@ -124,7 +127,8 @@ class SimulationClient:
 
     def step(self):
         self._update_internal_timestamp()
-        # do stuff
+        self.scenario.step()
+        self.agent.step()
         if not self.use_real_time:
             pybullet.stepSimulation()
 
