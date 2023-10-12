@@ -25,3 +25,23 @@ py_library(
         requirement("matplotlib"),
     ],
 )
+
+py_library(
+    name = "simulation_core",
+    srcs = [
+        "simulation.py",
+        "simulation_agent.py",
+        "simulation_scenario.py",
+    ],
+    deps = [
+        requirement("pybullet"),
+        requirement("numpy"),
+    ],
+)
+
+py_binary(
+    name = "simulation_main",
+    srcs = ["simulation_main.py"],
+    data = [":model"],
+    deps = [":simulation_core"],
+)
