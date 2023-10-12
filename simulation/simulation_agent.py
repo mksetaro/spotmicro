@@ -2,10 +2,6 @@ import pybullet_data
 import pybullet
 import abc
 
-import pybullet_data
-import pybullet
-import abc
-
 
 class SimulationAgent(abc.ABC):
     def __init__(self, name, agent_description_file_path) -> None:
